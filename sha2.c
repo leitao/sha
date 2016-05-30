@@ -3,18 +3,16 @@
 #include <stdint.h>
 #include <string.h>
 
-
-
 /* Crazy functions */
 
-uint32_t ch(uint32_t x, uint32_t y, uint32_t z){
+uint32_t Ch(uint32_t x, uint32_t y, uint32_t z){
 	uint32_t tmp, tmp2;
 	tmp = x & y;
 	tmp2 = ~x & z;
 	return tmp + tmp2;
 }
 
-uint32_t maj(uint32_t x, uint32_t y, uint32_t z){
+uint32_t Maj(uint32_t x, uint32_t y, uint32_t z){
 	uint32_t tmp, tmp2, tmp3;
 
 	tmp = x & y;
@@ -88,11 +86,12 @@ char **parse_message(char *M, int size){
 	return block;
 }
 
-int do_core(char **set, uint32_t * h0, int entries){
+uint32_t *do_core(char **set, uint32_t * h0, int entries){
 	uint32_t a, b, c, d, e, f, g, h;
 	uint32_t t1, t2;
 	uint32_t w[64];
 	uint32_t *ptr;
+	uint32_t *H;
 
 	uint32_t k[64] = {0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
 		0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98,
@@ -109,6 +108,9 @@ int do_core(char **set, uint32_t * h0, int entries){
 		0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
 
 
+	// return output
+	H = (uint32_t *) malloc(8*sizeof(uint32_t));
+
 	for (int i = 1 ; i <= entries ; i++){
 		a = h0[0];
 		b = h0[1];
@@ -120,18 +122,47 @@ int do_core(char **set, uint32_t * h0, int entries){
 		h = h0[8]; 
 		ptr = (uint32_t *) set[entries -1];
 
+
+		// Defining the W array for each M
 		for (int z = 0; z< 15; z++){
 			w[z] = ptr[0];
 		}
+		for (int z = 16; z< 64; z++){
+			w[z] = a1(w[z-2]) + w[z-7] + a0(w[z-15]) + w[z-16];
+		}
 
+		// Main loop
 		for (int j = 0; j <= 63; j++){
-			t1 = h + sum1(e) + Ch(e, f, g) + k[j] + w[j];
+			t1 = h + S1(e) + Ch(e, f, g) + k[j] + w[j];
+			t2 = S0(a) + Maj(a,b,c);
+			h = g;
+			g = f;
+			f = e;
+			e = d + t1;
+			d = c;
+			c = b;
+			b = a;
+			a = t1 + t2;
 		}	
+
+		// Create the hash output
+
+		H[0] = a + H[0];
+		H[1] = b + H[1];
+		H[2] = c + H[2];
+		H[3] = d + H[3];
+		H[4] = e + H[4];
+		H[5] = f + H[5];
+		H[6] = g + H[6];
+		H[7] = g + H[7];
 	}
+
+	return H;
 }
 
 int main(){
 	uint32_t h0[8] = { 0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
+	uint32_t *H;
 	
 	char *M;
 	char **set;
@@ -142,8 +173,13 @@ int main(){
 	set = parse_message(M, size);
 	printf("%s\n", set[0]);
 
-	do_core(set, h0, size/512);
+	H = do_core(set, h0, size/512);
 
+	for (int i = 0; i <=8 ; i++){
+		printf("%x", H[i]);
+	}
+
+	printf("\n");
 
 	return 0;
 }
