@@ -2,6 +2,18 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <assert.h>
+
+
+/* default functions */
+uint32_t rotate_right(uint32_t num, uint32_t bits)
+{
+	return ((num >> bits) | (num << (32 -bits)));
+}
+
+#define SWAP_UINT32(x) (((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24))
+
+/* end default functions */
 
 /* Crazy functions */
 
@@ -25,9 +37,9 @@ uint32_t Maj(uint32_t x, uint32_t y, uint32_t z){
 uint32_t S0(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
 
-	tmp = tmp >> 2;
-	tmp2 = tmp >> 13;	
-	tmp3 = tmp >> 22;
+	tmp = x >> 2;
+	tmp2 = x >> 13;	
+	tmp3 = x >> 22;
 
 	return tmp + tmp2 + tmp3;
 
@@ -36,9 +48,9 @@ uint32_t S0(uint32_t x){
 uint32_t S1(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
 
-	tmp = tmp >> 6;
-	tmp2 = tmp >> 11;	
-	tmp3 = tmp >> 25;
+	tmp = x >> 6;
+	tmp2 = x >> 11;	
+	tmp3 = x >> 25;
 
 	return tmp + tmp2 + tmp3;
 }
@@ -46,9 +58,9 @@ uint32_t S1(uint32_t x){
 uint32_t a0(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
 
-	tmp = tmp >> 7;
-	tmp2 = tmp >> 18;
-	tmp3 = tmp << 3;
+	tmp = x >> 7;
+	tmp2 = x >> 18;
+	tmp3 = rotate_right(x, 3);
 
 	return tmp + tmp2 + tmp3;
 
@@ -57,9 +69,9 @@ uint32_t a0(uint32_t x){
 uint32_t a1(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
 
-	tmp = tmp >> 17;
-	tmp2 = tmp >> 19;
-	tmp3 = tmp << 10;
+	tmp = x >> 17;
+	tmp2 = x >> 19;
+	tmp3 = rotate_right(x, 10);
 
 	return tmp + tmp2 + tmp3;
 }
@@ -67,9 +79,10 @@ uint32_t a1(uint32_t x){
 // End of crazy functions
 
 char *pad_message(char *M, int size){
-	if (size % 512 == 0){
-		return M;
-	}
+	assert(size < 512);
+
+	M[size] = 1 << 7;
+	return M;
 }
 
 char **parse_message(char *M, int size){
@@ -114,20 +127,20 @@ uint32_t *do_core(char **set, uint32_t * h0, int entries){
 	for (int i = 1 ; i <= entries ; i++){
 		a = h0[0];
 		b = h0[1];
-		c = h0[3];
-		d = h0[4];
-		e = h0[5];
-		f = h0[6];
-		g = h0[7];
-		h = h0[8]; 
+		c = h0[2];
+		d = h0[3];
+		e = h0[4];
+		f = h0[5];
+		g = h0[6];
+		h = h0[7]; 
 		ptr = (uint32_t *) set[entries -1];
-
 
 		// Defining the W array for each M
 		for (int z = 0; z< 15; z++){
-			w[z] = ptr[0];
+			w[z] = SWAP_UINT32(ptr[z]);
 		}
-		for (int z = 16; z< 64; z++){
+
+		for (int z = 15; z< 64; z++){
 			w[z] = a1(w[z-2]) + w[z-7] + a0(w[z-15]) + w[z-16];
 		}
 
@@ -146,7 +159,6 @@ uint32_t *do_core(char **set, uint32_t * h0, int entries){
 		}	
 
 		// Create the hash output
-
 		H[0] = a + H[0];
 		H[1] = b + H[1];
 		H[2] = c + H[2];
@@ -160,7 +172,7 @@ uint32_t *do_core(char **set, uint32_t * h0, int entries){
 	return H;
 }
 
-int main(){
+int main(int argc, char **argv){
 	uint32_t h0[8] = { 0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
 	uint32_t *H;
 	
@@ -168,8 +180,16 @@ int main(){
 	char **set;
 	int size = 512;
 
+	if (argc < 2) {
+		printf("Usage:\n%s <Message>\n", argv[0]);
+		exit(-1);
+	}
+
 	M = (char *) malloc(size);
-	M = pad_message(M, size);
+	memset(M, 0, size);
+	memcpy(M, argv[1], strlen(argv[1]));
+
+	M = pad_message(M, strlen(argv[1]));
 	set = parse_message(M, size);
 	printf("%s\n", set[0]);
 
