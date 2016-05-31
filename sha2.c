@@ -21,7 +21,7 @@ uint32_t Ch(uint32_t x, uint32_t y, uint32_t z){
 	uint32_t tmp, tmp2;
 	tmp = x & y;
 	tmp2 = ~x & z;
-	return tmp + tmp2;
+	return tmp ^ tmp2;
 }
 
 uint32_t Maj(uint32_t x, uint32_t y, uint32_t z){
@@ -31,49 +31,68 @@ uint32_t Maj(uint32_t x, uint32_t y, uint32_t z){
 	tmp2 = x & z;
 	tmp3 = y & z;
 
-	return tmp + tmp2 + tmp3;
+	return tmp ^ tmp2 ^ tmp3;
 }
 
 uint32_t S0(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
 
-	tmp = x >> 2;
+/*	tmp = x >> 2;
 	tmp2 = x >> 13;	
 	tmp3 = x >> 22;
+*/
+	tmp = rotate_right(x, 2);
+	tmp2 = rotate_right(x, 13);
+	tmp3 = rotate_right(x, 22);
 
-	return tmp + tmp2 + tmp3;
+	return tmp ^ tmp2 ^ tmp3;
 
 }
 
 uint32_t S1(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
-
+/*
 	tmp = x >> 6;
 	tmp2 = x >> 11;	
 	tmp3 = x >> 25;
+*/
+	tmp = rotate_right(x, 6);
+	tmp2 = rotate_right(x, 11);
+	tmp3 = rotate_right(x, 25);
 
-	return tmp + tmp2 + tmp3;
+	return tmp ^ tmp2 ^ tmp3;
 }
 
 uint32_t a0(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
 
+	/*
 	tmp = x >> 7;
 	tmp2 = x >> 18;
 	tmp3 = rotate_right(x, 3);
+	*/
+	tmp = rotate_right(x, 7);
+	tmp2 = rotate_right(x, 18);
+	tmp3 = x >> 3;
 
-	return tmp + tmp2 + tmp3;
+	return tmp ^ tmp2 ^ tmp3;
 
 }
 
 uint32_t a1(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
 
+	/*
 	tmp = x >> 17;
 	tmp2 = x >> 19;
 	tmp3 = rotate_right(x, 10);
 
-	return tmp + tmp2 + tmp3;
+	*/
+	tmp = rotate_right(x, 17);
+	tmp2 = rotate_right(x, 19);
+	tmp3 = x >> 10;
+
+	return tmp ^ tmp2 ^ tmp3;
 }
 
 // End of crazy functions
@@ -173,7 +192,9 @@ uint32_t *do_core(char **set, uint32_t * h0, int entries){
 }
 
 int main(int argc, char **argv){
-	uint32_t h0[8] = { 0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
+	uint32_t h0[8] = { 0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+	                   0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
+
 	uint32_t *H;
 	
 	char *M;
@@ -191,7 +212,6 @@ int main(int argc, char **argv){
 
 	M = pad_message(M, strlen(argv[1]));
 	set = parse_message(M, size);
-	printf("%s\n", set[0]);
 
 	H = do_core(set, h0, size/512);
 
