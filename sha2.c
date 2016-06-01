@@ -63,7 +63,7 @@ uint32_t S1(uint32_t x){
 	return tmp ^ tmp2 ^ tmp3;
 }
 
-uint32_t a0(uint32_t x){
+uint32_t s0(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
 
 	/*
@@ -79,7 +79,7 @@ uint32_t a0(uint32_t x){
 
 }
 
-uint32_t a1(uint32_t x){
+uint32_t s1(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
 
 	/*
@@ -143,6 +143,9 @@ uint32_t *do_core(char **set, uint32_t * h0, int entries){
 	// return output
 	H = (uint32_t *) malloc(8*sizeof(uint32_t));
 
+	// setting w
+	memset(w, 0, 64*sizeof(uint32_t));
+
 	for (int i = 1 ; i <= entries ; i++){
 		a = h0[0];
 		b = h0[1];
@@ -155,12 +158,12 @@ uint32_t *do_core(char **set, uint32_t * h0, int entries){
 		ptr = (uint32_t *) set[entries -1];
 
 		// Defining the W array for each M
-		for (int z = 0; z< 15; z++){
+		for (int z = 0; z<= 15; z++){
 			w[z] = SWAP_UINT32(ptr[z]);
 		}
 
-		for (int z = 15; z< 64; z++){
-			w[z] = a1(w[z-2]) + w[z-7] + a0(w[z-15]) + w[z-16];
+		for (int z = 16; z< 64; z++){
+			w[z] = s1(w[z-2]) + w[z-7] + s0(w[z-15]) + w[z-16];
 		}
 
 		// Main loop
