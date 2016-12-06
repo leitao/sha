@@ -37,10 +37,6 @@ uint32_t Maj(uint32_t x, uint32_t y, uint32_t z){
 uint32_t S0(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
 
-/*	tmp = x >> 2;
-	tmp2 = x >> 13;
-	tmp3 = x >> 22;
-*/
 	tmp = rotate_right(x, 2);
 	tmp2 = rotate_right(x, 13);
 	tmp3 = rotate_right(x, 22);
@@ -51,11 +47,7 @@ uint32_t S0(uint32_t x){
 
 uint32_t S1(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
-/*
-	tmp = x >> 6;
-	tmp2 = x >> 11;
-	tmp3 = x >> 25;
-*/
+
 	tmp = rotate_right(x, 6);
 	tmp2 = rotate_right(x, 11);
 	tmp3 = rotate_right(x, 25);
@@ -66,28 +58,16 @@ uint32_t S1(uint32_t x){
 uint32_t s0(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
 
-	/*
-	tmp = x >> 7;
-	tmp2 = x >> 18;
-	tmp3 = rotate_right(x, 3);
-	*/
 	tmp = rotate_right(x, 7);
 	tmp2 = rotate_right(x, 18);
 	tmp3 = x >> 3;
 
 	return tmp ^ tmp2 ^ tmp3;
-
 }
 
 uint32_t s1(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
 
-	/*
-	tmp = x >> 17;
-	tmp2 = x >> 19;
-	tmp3 = rotate_right(x, 10);
-
-	*/
 	tmp = rotate_right(x, 17);
 	tmp2 = rotate_right(x, 19);
 	tmp3 = x >> 10;
