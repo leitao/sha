@@ -219,7 +219,7 @@ int main(int argc, char **argv){
 	H = do_core(set, h0, size/512);
 
 	for (int i = 0; i <=8 ; i++){
-		printf("%x", H[i]);
+		printf("%08x", H[i]);
 	}
 
 	printf("\n");
