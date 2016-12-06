@@ -205,13 +205,21 @@ int main(int argc, char **argv){
 	int size = 512;
 
 	if (argc < 2) {
-		printf("Usage:\n%s <Message>\n", argv[0]);
+		printf("Usage:\n%s <Message or file>\n", argv[0]);
 		exit(-1);
 	}
 
 	M = (char *) malloc(size);
 	memset(M, 0, size);
-	memcpy(M, argv[1], strlen(argv[1]));
+
+	FILE* handle = fopen(argv[1], "r");
+	if (handle == NULL) {
+		// fall back to string from argv[1]
+		memcpy(M, argv[1], strlen(argv[1]));
+	} else {
+		fread(M, sizeof(char), size, handle);
+		fclose(handle);
+	}
 
 	M = pad_message(M, strlen(argv[1]));
 	set = parse_message(M, size);
