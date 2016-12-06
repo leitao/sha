@@ -38,7 +38,7 @@ uint32_t S0(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
 
 /*	tmp = x >> 2;
-	tmp2 = x >> 13;	
+	tmp2 = x >> 13;
 	tmp3 = x >> 22;
 */
 	tmp = rotate_right(x, 2);
@@ -53,7 +53,7 @@ uint32_t S1(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
 /*
 	tmp = x >> 6;
-	tmp2 = x >> 11;	
+	tmp2 = x >> 11;
 	tmp3 = x >> 25;
 */
 	tmp = rotate_right(x, 6);
@@ -105,7 +105,7 @@ char *pad_message(char *M, int size){
 }
 
 char **parse_message(char *M, int size){
-	char **block; 
+	char **block;
 	int entries = size / 512;
 
 	block = (char **) malloc(entries * sizeof(char *));
@@ -154,7 +154,7 @@ uint32_t *do_core(char **set, uint32_t * h0, int entries){
 		e = h0[4];
 		f = h0[5];
 		g = h0[6];
-		h = h0[7]; 
+		h = h0[7];
 		ptr = (uint32_t *) set[entries -1];
 
 		// Defining the W array for each M
@@ -178,7 +178,7 @@ uint32_t *do_core(char **set, uint32_t * h0, int entries){
 			c = b;
 			b = a;
 			a = t1 + t2;
-		}	
+		}
 
 		// Create the hash output
 		H[0] = a + H[0];
@@ -199,7 +199,7 @@ int main(int argc, char **argv){
 	                   0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
 
 	uint32_t *H;
-	
+
 	char *M;
 	char **set;
 	int size = 512;
