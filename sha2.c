@@ -168,7 +168,7 @@ uint32_t *do_core(char **set, uint32_t * h0, int entries){
 		H[4] = e + H[4];
 		H[5] = f + H[5];
 		H[6] = g + H[6];
-		H[7] = g + H[7];
+		H[7] = h + H[7];
 	}
 
 	return H;
