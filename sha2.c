@@ -113,12 +113,11 @@ char **parse_message(char *M, int size){
 	return block;
 }
 
-uint32_t *do_core(char **set, uint32_t * h0, int entries){
+void do_core(char **set, uint32_t * H, int entries){
 	uint32_t a, b, c, d, e, f, g, h;
 	uint32_t t1, t2;
 	uint32_t w[64];
 	uint32_t *ptr;
-	uint32_t *H;
 
 	uint32_t k[64] = {0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
 		0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98,
@@ -134,22 +133,18 @@ uint32_t *do_core(char **set, uint32_t * h0, int entries){
 		0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814,
 		0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
 
-
-	// return output
-	H = (uint32_t *) malloc(8*sizeof(uint32_t));
-
 	// setting w
 	memset(w, 0, 64*sizeof(uint32_t));
 
 	for (int i = 1 ; i <= entries ; i++){
-		a = h0[0];
-		b = h0[1];
-		c = h0[2];
-		d = h0[3];
-		e = h0[4];
-		f = h0[5];
-		g = h0[6];
-		h = h0[7];
+		a = H[0];
+		b = H[1];
+		c = H[2];
+		d = H[3];
+		e = H[4];
+		f = H[5];
+		g = H[6];
+		h = H[7];
 		ptr = (uint32_t *) set[entries -1];
 
 		// Defining the W array for each M
@@ -176,24 +171,20 @@ uint32_t *do_core(char **set, uint32_t * h0, int entries){
 		}
 
 		// Create the hash output
-		H[0] = a + H[0];
-		H[1] = b + H[1];
-		H[2] = c + H[2];
-		H[3] = d + H[3];
-		H[4] = e + H[4];
-		H[5] = f + H[5];
-		H[6] = g + H[6];
-		H[7] = h + H[7];
+		H[0] += a;
+		H[1] += b;
+		H[2] += c;
+		H[3] += d;
+		H[4] += e;
+		H[5] += f;
+		H[6] += g;
+		H[7] += h;
 	}
-
-	return H;
 }
 
 int main(int argc, char **argv){
-	uint32_t h0[8] = { 0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+	uint32_t H[8] = { 0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
 	                   0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
-
-	uint32_t *H;
 
 	char *M;
 	char **set;
@@ -220,7 +211,7 @@ int main(int argc, char **argv){
 	M = swap_bytes(M, strlen(argv[1]));
 	set = parse_message(M, size);
 
-	H = do_core(set, h0, size/512);
+	do_core(set, H, size/512);
 
 	for (int i = 0; i < 8 ; i++){
 		printf("%08x", H[i]);
