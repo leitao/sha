@@ -77,10 +77,25 @@ uint32_t s1(uint32_t x){
 
 // End of crazy functions
 
+char *swap_bytes(char *M, int size){
+	for (int i = 0; i < size; i = i+4) {
+		uint32_t* ptr = (uint32_t*)&M[i];
+		*ptr = SWAP_UINT32(*ptr);
+	}
+	return M;
+}
 char *pad_message(char *M, int size){
 	assert(size < 512);
 
 	M[size] = 1 << 7;
+
+	// writes the message length at the end of the padding to 512 bits
+	int padding_size = 0;
+	if (size % 64 > 64-9) padding_size += 64;
+	padding_size += 64 - (size % 64);
+
+	// size in bits
+	*(uint32_t*)&M[size+padding_size-4] = (uint32_t)size*8;
 	return M;
 }
 
@@ -139,7 +154,7 @@ uint32_t *do_core(char **set, uint32_t * h0, int entries){
 
 		// Defining the W array for each M
 		for (int z = 0; z<= 15; z++){
-			w[z] = SWAP_UINT32(ptr[z]);
+			w[z] = ptr[z];
 		}
 
 		for (int z = 16; z< 64; z++){
@@ -202,6 +217,7 @@ int main(int argc, char **argv){
 	}
 
 	M = pad_message(M, strlen(argv[1]));
+	M = swap_bytes(M, strlen(argv[1]));
 	set = parse_message(M, size);
 
 	H = do_core(set, h0, size/512);
