@@ -214,3 +214,7 @@ int main(int argc, char **argv){
 
 	return 0;
 }
+
+// if using vim with "set modeline" on your .vimrc, then this file will be
+// automatically configured as:
+// vim: noai:ts=4:sw=4:sts=4:noet :
