@@ -37,10 +37,6 @@ uint32_t Maj(uint32_t x, uint32_t y, uint32_t z){
 uint32_t S0(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
 
-/*	tmp = x >> 2;
-	tmp2 = x >> 13;	
-	tmp3 = x >> 22;
-*/
 	tmp = rotate_right(x, 2);
 	tmp2 = rotate_right(x, 13);
 	tmp3 = rotate_right(x, 22);
@@ -51,11 +47,7 @@ uint32_t S0(uint32_t x){
 
 uint32_t S1(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
-/*
-	tmp = x >> 6;
-	tmp2 = x >> 11;	
-	tmp3 = x >> 25;
-*/
+
 	tmp = rotate_right(x, 6);
 	tmp2 = rotate_right(x, 11);
 	tmp3 = rotate_right(x, 25);
@@ -66,28 +58,16 @@ uint32_t S1(uint32_t x){
 uint32_t s0(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
 
-	/*
-	tmp = x >> 7;
-	tmp2 = x >> 18;
-	tmp3 = rotate_right(x, 3);
-	*/
 	tmp = rotate_right(x, 7);
 	tmp2 = rotate_right(x, 18);
 	tmp3 = x >> 3;
 
 	return tmp ^ tmp2 ^ tmp3;
-
 }
 
 uint32_t s1(uint32_t x){
 	uint32_t tmp, tmp2, tmp3;
 
-	/*
-	tmp = x >> 17;
-	tmp2 = x >> 19;
-	tmp3 = rotate_right(x, 10);
-
-	*/
 	tmp = rotate_right(x, 17);
 	tmp2 = rotate_right(x, 19);
 	tmp3 = x >> 10;
@@ -97,15 +77,30 @@ uint32_t s1(uint32_t x){
 
 // End of crazy functions
 
+char *swap_bytes(char *M, int size){
+	for (int i = 0; i < size; i = i+4) {
+		uint32_t* ptr = (uint32_t*)&M[i];
+		*ptr = SWAP_UINT32(*ptr);
+	}
+	return M;
+}
 char *pad_message(char *M, int size){
 	assert(size < 512);
 
 	M[size] = 1 << 7;
+
+	// writes the message length at the end of the padding to 512 bits
+	int padding_size = 0;
+	if (size % 64 > 64-9) padding_size += 64;
+	padding_size += 64 - (size % 64);
+
+	// size in bits
+	*(uint32_t*)&M[size+padding_size-4] = (uint32_t)size*8;
 	return M;
 }
 
 char **parse_message(char *M, int size){
-	char **block; 
+	char **block;
 	int entries = size / 512;
 
 	block = (char **) malloc(entries * sizeof(char *));
@@ -118,12 +113,11 @@ char **parse_message(char *M, int size){
 	return block;
 }
 
-uint32_t *do_core(char **set, uint32_t * h0, int entries){
+void do_core(char **set, uint32_t * H, int entries){
 	uint32_t a, b, c, d, e, f, g, h;
 	uint32_t t1, t2;
 	uint32_t w[64];
 	uint32_t *ptr;
-	uint32_t *H;
 
 	uint32_t k[64] = {0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
 		0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98,
@@ -139,27 +133,23 @@ uint32_t *do_core(char **set, uint32_t * h0, int entries){
 		0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814,
 		0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
 
-
-	// return output
-	H = (uint32_t *) malloc(8*sizeof(uint32_t));
-
 	// setting w
 	memset(w, 0, 64*sizeof(uint32_t));
 
 	for (int i = 1 ; i <= entries ; i++){
-		a = h0[0];
-		b = h0[1];
-		c = h0[2];
-		d = h0[3];
-		e = h0[4];
-		f = h0[5];
-		g = h0[6];
-		h = h0[7]; 
+		a = H[0];
+		b = H[1];
+		c = H[2];
+		d = H[3];
+		e = H[4];
+		f = H[5];
+		g = H[6];
+		h = H[7];
 		ptr = (uint32_t *) set[entries -1];
 
 		// Defining the W array for each M
 		for (int z = 0; z<= 15; z++){
-			w[z] = SWAP_UINT32(ptr[z]);
+			w[z] = ptr[z];
 		}
 
 		for (int z = 16; z< 64; z++){
@@ -178,51 +168,60 @@ uint32_t *do_core(char **set, uint32_t * h0, int entries){
 			c = b;
 			b = a;
 			a = t1 + t2;
-		}	
+		}
 
 		// Create the hash output
-		H[0] = a + H[0];
-		H[1] = b + H[1];
-		H[2] = c + H[2];
-		H[3] = d + H[3];
-		H[4] = e + H[4];
-		H[5] = f + H[5];
-		H[6] = g + H[6];
-		H[7] = g + H[7];
+		H[0] += a;
+		H[1] += b;
+		H[2] += c;
+		H[3] += d;
+		H[4] += e;
+		H[5] += f;
+		H[6] += g;
+		H[7] += h;
 	}
-
-	return H;
 }
 
 int main(int argc, char **argv){
-	uint32_t h0[8] = { 0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+	uint32_t H[8] = { 0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
 	                   0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
 
-	uint32_t *H;
-	
 	char *M;
 	char **set;
 	int size = 512;
 
 	if (argc < 2) {
-		printf("Usage:\n%s <Message>\n", argv[0]);
+		printf("Usage:\n%s <Message or file>\n", argv[0]);
 		exit(-1);
 	}
 
 	M = (char *) malloc(size);
 	memset(M, 0, size);
-	memcpy(M, argv[1], strlen(argv[1]));
+
+	FILE* handle = fopen(argv[1], "r");
+	if (handle == NULL) {
+		// fall back to string from argv[1]
+		memcpy(M, argv[1], strlen(argv[1]));
+	} else {
+		fread(M, sizeof(char), size, handle);
+		fclose(handle);
+	}
 
 	M = pad_message(M, strlen(argv[1]));
+	M = swap_bytes(M, strlen(argv[1]));
 	set = parse_message(M, size);
 
-	H = do_core(set, h0, size/512);
+	do_core(set, H, size/512);
 
-	for (int i = 0; i <=8 ; i++){
-		printf("%x", H[i]);
+	for (int i = 0; i < 8 ; i++){
+		printf("%08x", H[i]);
 	}
 
 	printf("\n");
 
 	return 0;
 }
+
+// if using vim with "set modeline" on your .vimrc, then this file will be
+// automatically configured as:
+// vim: noai:ts=4:sw=4:sts=4:noet :
